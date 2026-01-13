@@ -2,7 +2,7 @@ name: main
 
 on:
   workflow_dispatch:       # Permite execução manual
-  
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
@@ -16,18 +16,21 @@ jobs:
         with:
           python-version: '3.10'
 
+      # CORREÇÃO CRÍTICA: Nome do segredo ajustado para o que está na Imagem 1
       - name: Restaurar hxh.json a partir do segredo
         run: |
-          echo "$GCP_JSON_BASE64" | base64 -d > hxh.json
+          echo "$GCP_SA_KEY_JSON" | base64 -d > hxh.json
         shell: bash
         env:
-          GCP_JSON_BASE64: ${{ secrets.GCP_JSON_BASE64 }}
+          GCP_SA_KEY_JSON: ${{ secrets.GCP_SA_KEY_JSON }}
 
-      - name: Instalar dependências
+      - name: Instalar dependências e Playwright
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install playwright
           playwright install chromium
+          playwright install-deps  # Necessário para rodar no Ubuntu
 
       - name: Executar o script
         run: xvfb-run python main.py
