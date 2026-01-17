@@ -1,11 +1,22 @@
 name: main
 
 on:
+  # 1. Gatilho MANUAL apenas.
+  # O 'schedule' (cron) foi removido.
   workflow_dispatch:
+
+# 🔥 TRAVA DE SEGURANÇA MANTIDA 🔥
+# Mesmo sendo manual, isso impede que você (ou uma API)
+# inicie duas execuções ao mesmo tempo sem querer.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
+    # Timeout de segurança
+    timeout-minutes: 15 
 
     steps:
       - name: Checkout do código
@@ -16,19 +27,18 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Cria o arquivo hxh.json usando o nome NOVO do seu segredo (GCP_JSON_BASE64)
+      # Cria o arquivo de credenciais
       - name: Criar credencial Google
         run: echo "${{ secrets.GCP_JSON_BASE64 }}" | base64 -d > hxh.json
 
-      # Instala dependências do Python e do Sistema (Linux)
       - name: Instalar dependências e Playwright
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install playwright
           playwright install chromium
           playwright install-deps
 
-      # Roda o script com interface gráfica simulada (xvfb)
+      # Executa o script com tela simulada (Xvfb)
       - name: Executar o script
-        run: xvfb-run python main.py
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python main.py
